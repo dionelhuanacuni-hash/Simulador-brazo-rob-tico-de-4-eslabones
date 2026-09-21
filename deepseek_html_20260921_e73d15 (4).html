@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brazo de 4 eslabones — A, B, C, D</title>
+<style>
+  :root {
+    --bg: #0f1720;
+    --panel: #16212c;
+    --panel-2: #1c2b38;
+    --line: #2a3d4d;
+    --text: #e7edf2;
+    --muted: #8fa3b3;
+    --a-color: #ff9d5b;
+    --b-color: #5bc8ff;
+    --c-color: #c98bff;
+    --d-color: #ffe066;
+    --base-color: #8effa0;
+    --accent: #ffb454;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    padding: 32px 18px 70px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 26px; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1.25fr 0.75fr;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 20px 22px;
+  }
+
+  svg { width: 100%; height: auto; display: block; background: var(--panel-2); border-radius: 8px; cursor: grab; touch-action: none; user-select: none; }
+  svg:active { cursor: grabbing; }
+
+  h2 {
+    font-size: 0.92rem;
+    font-weight: 600;
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2 .swatch { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+  .ctrl-row { margin-bottom: 12px; }
+  .ctrl-row:last-child { margin-bottom: 0; }
+  .ctrl-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.83rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .ctrl-label .val { color: var(--text); font-variant-numeric: tabular-nums; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+  .angles-block { margin-bottom: 20px; }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+  .coord-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .coord-table th, .coord-table td { text-align: left; padding: 6px 6px; border-bottom: 1px solid var(--line); }
+  .coord-table th { color: var(--muted); font-weight: 500; font-size: 0.75rem; }
+  .coord-table td { font-variant-numeric: tabular-nums; }
+  .swatch-cell { display: flex; align-items: center; gap: 7px; }
+
+  .hint {
+    margin-top: 12px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Brazo de 4 eslabones — A, B, C, D</h1>
+  <div class="subtitle">Base sobre Z global · flexiones verticales · torsión del penúltimo eslabón (C) que arrastra al último (D)</div>
+
+  <div class="layout">
+
+    <!-- ───── Columna izquierda: gráfica ───── -->
+    <div class="panel">
+      <svg id="scene" viewBox="0 0 620 620"></svg>
+
+      <div class="legend">
+        <span><span class="dot" style="background:var(--base-color)"></span>Ejes globales</span>
+        <span><span class="dot" style="background:var(--a-color)"></span>Eslabón A (14 cm)</span>
+        <span><span class="dot" style="background:var(--b-color)"></span>Eslabón B (10 cm)</span>
+        <span><span class="dot" style="background:var(--c-color)"></span>Eslabón C (10 cm)</span>
+        <span><span class="dot" style="background:var(--d-color)"></span>Eslabón D (6 cm)</span>
+      </div>
+      <div class="hint">
+        🖱️ <b>Clic izquierdo + arrastrar</b> = orbitar ·
+        <b>Clic derecho + arrastrar</b> = mover escena en XY · <b>Rueda</b> = zoom
+      </div>
+    </div>
+
+    <!-- ───── Columna derecha: controles + tabla ───── -->
+    <div class="panel">
+      <div class="angles-block">
+        <div class="ctrl-row">
+          <div class="ctrl-label"><span>Rotación base (eje Z) — α</span><span class="val" id="alpha-val">0°</span></div>
+          <input type="range" id="alpha" min="0" max="360" value="0" step="1">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label"><span>Flexión 1 (A vs plano XY) — θ₁</span><span class="val" id="theta1-val">75°</span></div>
+          <input type="range" id="theta1" min="-180" max="180" value="75" step="1">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label"><span>Flexión 2 (B vs A) — θ₂</span><span class="val" id="theta2-val">-55°</span></div>
+          <input type="range" id="theta2" min="-180" max="180" value="-55" step="1">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label"><span>Flexión 3 (C vs B) — θ₃</span><span class="val" id="theta3-val">-75°</span></div>
+          <input type="range" id="theta3" min="-180" max="180" value="-75" step="1">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label"><span>Flexión 4 (D vs C) — θ₄</span><span class="val" id="theta4-val">60°</span></div>
+          <input type="range" id="theta4" min="-180" max="180" value="60" step="1">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label"><span>Torsión eslabón C (penúltimo) — τ</span><span class="val" id="torsion-val">0°</span></div>
+          <input type="range" id="torsion" min="0" max="360" value="0" step="1">
+        </div>
+      </div>
+
+      <h2>Coordenadas resultantes</h2>
+      <table class="coord-table">
+        <thead><tr><th>Punto</th><th>x</th><th>y</th><th>z</th></tr></thead>
+        <tbody>
+          <tr><td class="swatch-cell"><span class="swatch" style="background:var(--base-color)"></span>P₀</td><td>0.000</td><td>0.000</td><td>0.000</td></tr>
+          <tr><td class="swatch-cell"><span class="swatch" style="background:var(--a-color)"></span>P₁</td><td id="p1x"></td><td id="p1y"></td><td id="p1z"></td></tr>
+          <tr><td class="swatch-cell"><span class="swatch" style="background:var(--b-color)"></span>P₂</td><td id="p2x"></td><td id="p2y"></td><td id="p2z"></td></tr>
+          <tr><td class="swatch-cell"><span class="swatch" style="background:var(--c-color)"></span>P₃</td><td id="p3x"></td><td id="p3y"></td><td id="p3z"></td></tr>
+          <tr><td class="swatch-cell"><span class="swatch" style="background:var(--d-color)"></span>P₄</td><td id="p4x"></td><td id="p4y"></td><td id="p4z"></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const svg = document.getElementById('scene');
+const NS = 'http://www.w3.org/2000/svg';
+const CX = 310, CY = 360;
+const BASE_SCALE = 18;
+const VIEW_W = 620;
+
+// ── utilidades matemáticas ──────────────────────────────────────────────
+function cross(a, b) {
+  return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+}
+function dot(a, b) { return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; }
+
+function rotateAroundAxis(v, axis, angleRad) {
+  const c = Math.cos(angleRad), s = Math.sin(angleRad);
+  const d = dot(v, axis);
+  const cr = cross(axis, v);
+  return [
+    v[0]*c + cr[0]*s + axis[0]*d*(1-c),
+    v[1]*c + cr[1]*s + axis[1]*d*(1-c),
+    v[2]*c + cr[2]*s + axis[2]*d*(1-c),
+  ];
+}
+function rotZ(p, a) {
+  const c = Math.cos(a), s = Math.sin(a);
+  return [p[0]*c - p[1]*s, p[0]*s + p[1]*c, p[2]];
+}
+
+// ── cámara ──────────────────────────────────────────────────────────────
+let azim = -60, elev = -12, zoom = 1;
+let panX = 0, panY = 0;
+
+function project(p, azimRad, elevRad) {
+  let [x, y, z] = p;
+  const ca = Math.cos(azimRad), sa = Math.sin(azimRad);
+  let x1 = x*ca - y*sa;
+  let y1 = x*sa + y*ca;
+  const ce = Math.cos(elevRad), se = Math.sin(elevRad);
+  let vert = z*ce - y1*se;
+  const s = BASE_SCALE * zoom;
+  return { sx: CX + panX + x1*s, sy: CY + panY - vert*s };
+}
+
+// ── primitivas SVG ──────────────────────────────────────────────────────
+function line(x1,y1,x2,y2,color,width,dash) {
+  const el = document.createElementNS(NS,'line');
+  el.setAttribute('x1',x1); el.setAttribute('y1',y1);
+  el.setAttribute('x2',x2); el.setAttribute('y2',y2);
+  el.setAttribute('stroke',color); el.setAttribute('stroke-width',width);
+  if (dash) el.setAttribute('stroke-dasharray', dash);
+  el.setAttribute('stroke-linecap','round');
+  return el;
+}
+function circle(cx,cy,r,color) {
+  const el = document.createElementNS(NS,'circle');
+  el.setAttribute('cx',cx); el.setAttribute('cy',cy); el.setAttribute('r',r);
+  el.setAttribute('fill',color);
+  return el;
+}
+function label(x,y,text,color,size) {
+  const el = document.createElementNS(NS,'text');
+  el.setAttribute('x',x); el.setAttribute('y',y);
+  el.setAttribute('fill',color); el.setAttribute('font-size',size||11.5);
+  el.setAttribute('font-family',"'Helvetica Neue',Arial,sans-serif");
+  el.textContent = text;
+  return el;
+}
+
+// ── interacción con el ratón ────────────────────────────────────────────
+let isPanning = false, isOrbiting = false, lastX = 0, lastY = 0;
+
+svg.addEventListener('mousedown', (e) => {
+  if (e.button === 0) isOrbiting = true;
+  else if (e.button === 2) isPanning = true;
+  else return;
+  lastX = e.clientX;
+  lastY = e.clientY;
+  e.preventDefault();
+});
+svg.addEventListener('contextmenu', (e) => e.preventDefault());
+
+window.addEventListener('mousemove', (e) => {
+  if (!isPanning && !isOrbiting) return;
+  const dx = e.clientX - lastX;
+  const dy = e.clientY - lastY;
+  lastX = e.clientX;
+  lastY = e.clientY;
+
+  if (isOrbiting) {
+    azim -= dx * 0.5;
+    elev += dy * 0.5;
+    if (elev >  85) elev =  85;
+    if (elev < -85) elev = -85;
+  } else if (isPanning) {
+    const rect = svg.getBoundingClientRect();
+    const k = VIEW_W / rect.width;
+    panX += dx * k;
+    panY += dy * k;
+  }
+  render();
+});
+
+window.addEventListener('mouseup', () => { isPanning = false; isOrbiting = false; });
+
+svg.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.12 : 1/1.12;
+  zoom *= factor;
+  if (zoom < 0.25) zoom = 0.25;
+  if (zoom > 4)    zoom = 4;
+  render();
+}, { passive: false });
+
+// ── sliders ─────────────────────────────────────────────────────────────
+function val(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+// ── render principal ────────────────────────────────────────────────────
+function render() {
+  const alpha   = val('alpha');
+  const th1     = val('theta1');
+  const th2     = val('theta2');
+  const th3     = val('theta3');
+  const th4     = val('theta4');
+  const torsion = val('torsion');
+
+  const L = [14, 10, 10, 6];
+  const alphaRad   = alpha   * Math.PI / 180;
+  const torsionRad = torsion * Math.PI / 180;
+
+  const a1 = th1 * Math.PI / 180;
+  const a2 = a1 + th2 * Math.PI / 180;
+  const a3 = a2 + th3 * Math.PI / 180;
+  const a4 = a3 + th4 * Math.PI / 180;
+
+  document.getElementById('alpha-val').textContent   = alpha.toFixed(0) + '°';
+  document.getElementById('theta1-val').textContent  = th1.toFixed(0) + '°';
+  document.getElementById('theta2-val').textContent  = th2.toFixed(0) + '°';
+  document.getElementById('theta3-val').textContent  = th3.toFixed(0) + '°';
+  document.getElementById('theta4-val').textContent  = th4.toFixed(0) + '°';
+  document.getElementById('torsion-val').textContent = torsion.toFixed(0) + '°';
+
+  const uA = [Math.cos(a1), 0, Math.sin(a1)];
+  const uB = [Math.cos(a2), 0, Math.sin(a2)];
+  const uC = [Math.cos(a3), 0, Math.sin(a3)];
+
+  const uD0 = [Math.cos(a4), 0, Math.sin(a4)];
+  const uD  = rotateAroundAxis(uD0, uC, torsionRad);
+
+  const P1_pre = [L[0]*uA[0], L[0]*uA[1], L[0]*uA[2]];
+  const P2_pre = [P1_pre[0] + L[1]*uB[0], P1_pre[1] + L[1]*uB[1], P1_pre[2] + L[1]*uB[2]];
+  const P3_pre = [P2_pre[0] + L[2]*uC[0], P2_pre[1] + L[2]*uC[1], P2_pre[2] + L[2]*uC[2]];
+  const P4_pre = [P3_pre[0] + L[3]*uD[0], P3_pre[1] + L[3]*uD[1], P3_pre[2] + L[3]*uD[2]];
+
+  const P0 = [0, 0, 0];
+  const P1 = rotZ(P1_pre, alphaRad);
+  const P2 = rotZ(P2_pre, alphaRad);
+  const P3 = rotZ(P3_pre, alphaRad);
+  const P4 = rotZ(P4_pre, alphaRad);
+
+  document.getElementById('p1x').textContent = P1[0].toFixed(3);
+  document.getElementById('p1y').textContent = P1[1].toFixed(3);
+  document.getElementById('p1z').textContent = P1[2].toFixed(3);
+  document.getElementById('p2x').textContent = P2[0].toFixed(3);
+  document.getElementById('p2y').textContent = P2[1].toFixed(3);
+  document.getElementById('p2z').textContent = P2[2].toFixed(3);
+  document.getElementById('p3x').textContent = P3[0].toFixed(3);
+  document.getElementById('p3y').textContent = P3[1].toFixed(3);
+  document.getElementById('p3z').textContent = P3[2].toFixed(3);
+  document.getElementById('p4x').textContent = P4[0].toFixed(3);
+  document.getElementById('p4y').textContent = P4[1].toFixed(3);
+  document.getElementById('p4z').textContent = P4[2].toFixed(3);
+
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  const azimRad = azim * Math.PI / 180;
+  const elevRad = elev * Math.PI / 180;
+
+  const axisLen = 8;
+  const axes = [
+    { from:[-axisLen,0,0], to:[axisLen,0,0], name:'Y' },
+    { from:[0,-axisLen,0], to:[0,axisLen,0], name:'X' },
+    { from:[0,0,-axisLen], to:[0,0,axisLen], name:'Z' },
+  ];
+  axes.forEach(ax => {
+    const p1 = project(ax.from, azimRad, elevRad);
+    const p2 = project(ax.to,   azimRad, elevRad);
+    svg.appendChild(line(p1.sx,p1.sy,p2.sx,p2.sy,'#31465a',1.3));
+    svg.appendChild(label(p2.sx+4,p2.sy+4, ax.name, '#5f7a8f', 12));
+  });
+
+  const pP0 = project(P0, azimRad, elevRad);
+  const pP1 = project(P1, azimRad, elevRad);
+  const pP2 = project(P2, azimRad, elevRad);
+  const pP3 = project(P3, azimRad, elevRad);
+  const pP4 = project(P4, azimRad, elevRad);
+
+  svg.appendChild(line(pP0.sx,pP0.sy,pP1.sx,pP1.sy,'#ff9d5b',5));
+  svg.appendChild(line(pP1.sx,pP1.sy,pP2.sx,pP2.sy,'#5bc8ff',5));
+  svg.appendChild(line(pP2.sx,pP2.sy,pP3.sx,pP3.sy,'#c98bff',5));
+  svg.appendChild(line(pP3.sx,pP3.sy,pP4.sx,pP4.sy,'#ffe066',5));
+
+  const sinT4 = Math.sin(th4 * Math.PI / 180);
+  if (Math.abs(sinT4) > 0.05) {
+    const uPerp_pre = cross(uC, uD);
+    const nrm = Math.hypot(uPerp_pre[0], uPerp_pre[1], uPerp_pre[2]);
+    if (nrm > 1e-6) {
+      const uPerp_world = rotZ([uPerp_pre[0]/nrm, uPerp_pre[1]/nrm, uPerp_pre[2]/nrm], alphaRad);
+      const len = 3;
+      const mark = [
+        P3[0] + uPerp_world[0]*len,
+        P3[1] + uPerp_world[1]*len,
+        P3[2] + uPerp_world[2]*len,
+      ];
+      const pMark = project(mark, azimRad, elevRad);
+      svg.appendChild(line(pP3.sx,pP3.sy,pMark.sx,pMark.sy,'#ffe066',2,'3,3'));
+    }
+  }
+
+  svg.appendChild(circle(pP0.sx,pP0.sy,6,'#8effa0'));
+  svg.appendChild(circle(pP1.sx,pP1.sy,6,'#ff9d5b'));
+  svg.appendChild(circle(pP2.sx,pP2.sy,6,'#5bc8ff'));
+  svg.appendChild(circle(pP3.sx,pP3.sy,6,'#c98bff'));
+  svg.appendChild(circle(pP4.sx,pP4.sy,6,'#ffe066'));
+
+  svg.appendChild(label(pP0.sx+9,pP0.sy-9,'P₀','#8effa0',12));
+  svg.appendChild(label(pP1.sx+9,pP1.sy-9,'P₁','#ff9d5b',12));
+  svg.appendChild(label(pP2.sx+9,pP2.sy-9,'P₂','#5bc8ff',12));
+  svg.appendChild(label(pP3.sx+9,pP3.sy-9,'P₃','#c98bff',12));
+  svg.appendChild(label(pP4.sx+9,pP4.sy-9,'P₄','#ffe066',12));
+}
+
+['alpha','theta1','theta2','theta3','theta4','torsion'].forEach(id => {
+  document.getElementById(id).addEventListener('input', render);
+});
+render();
+</script>
+
+</body>
+</html>
